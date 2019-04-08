@@ -12,15 +12,26 @@ import PscPrefetch.Prefetch                  (hash)
 import PscPrefetch.Data.PackageName
 import PscPrefetch.Data.PscPackage           (PscPackage (..))
 import PscPrefetch.Data.PscPackageWithSha256
+import System.Console.ArgParser              (CmdLnInterface, ParserSpec, andBy, mkApp, parsedBy, reqPos, runApp, withParseResult)
 import System.Environment                    (getArgs)
 
 main :: IO ()
-main = do
-  args <- getArgs
-  prefetch (head args) (head $ tail args)
+main = cli >>= (flip runApp print)
 
-prefetch :: String -> String -> IO ()
-prefetch inputPath outputPath = do
+data PscPrefetchArguments
+  = PscPrefetchArguments String String
+  deriving (Show)
+
+pscPrefetchArgumentsParser :: ParserSpec PscPrefetchArguments
+pscPrefetchArgumentsParser = PscPrefetchArguments
+  `parsedBy` reqPos "Input path"
+  `andBy`    reqPos "Output path"
+
+cli :: IO (CmdLnInterface PscPrefetchArguments)
+cli = mkApp pscPrefetchArgumentsParser
+
+prefetch :: PscPrefetchArguments -> IO ()
+prefetch (PscPrefetchArguments inputPath outputPath) = do
   packageSetJson <- (toLazyByteString . stringUtf8) <$> readFile inputPath
   packageSet <- pure $ fromMaybe (fromList []) (decode @(Map PackageName PscPackage) packageSetJson)
   hashedPackageSet <- sequence $ hash <$> packageSet
