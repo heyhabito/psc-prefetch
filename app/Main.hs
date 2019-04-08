@@ -16,7 +16,7 @@ import System.Console.ArgParser              (CmdLnInterface, ParserSpec, andBy,
 import System.Environment                    (getArgs)
 
 main :: IO ()
-main = cli >>= (flip runApp print)
+main = cli >>= (flip runApp prefetch)
 
 data PscPrefetchArguments
   = PscPrefetchArguments String String
@@ -32,7 +32,11 @@ cli = mkApp pscPrefetchArgumentsParser
 
 prefetch :: PscPrefetchArguments -> IO ()
 prefetch (PscPrefetchArguments inputPath outputPath) = do
+  putStrLn $ "Parsing " <> inputPath
   packageSetJson <- (toLazyByteString . stringUtf8) <$> readFile inputPath
   packageSet <- pure $ fromMaybe (fromList []) (decode @(Map PackageName PscPackage) packageSetJson)
+  putStrLn $ "Package set contains " <> (show $ length packageSet) <> " packages"
   hashedPackageSet <- sequence $ hash <$> packageSet
+  putStrLn $ "Writing output to " <> outputPath
   writeFile outputPath (unpack (encodePretty hashedPackageSet) <> "\n")
+  putStrLn $ "Finished"

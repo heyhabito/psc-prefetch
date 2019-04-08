@@ -22,6 +22,7 @@ import           System.Process                        (readProcess)
 
 hash :: PscPackage.PscPackage -> IO (Maybe PscPackageWithSha256.PscPackageWithSha256)
 hash package@(PscPackage.PscPackage _ repo version) = do
+  putStrLn $ "Cloning " <> (show repo)
   prefetch <- readProcess "nix-prefetch-git"
     [ "--fetch-submodules"
     , "--depth", "1"
